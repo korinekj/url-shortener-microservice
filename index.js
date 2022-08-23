@@ -1,6 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
+const { response } = require("express");
 const app = express();
 
 // Basic Configuration
@@ -22,7 +23,7 @@ app.get("/api/hello", function (req, res) {
 //zajistí že můžu využít payload (form data), respektive req.body níže...nevím nerozumím tomu pořádně zatímpičo
 app.use(express.urlencoded());
 
-app.post("/api/shorturl", function (req, res) {
+app.post("/api/shorturl/", function (req, res) {
   const validUrlRegex =
     /(ftp|http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?/;
 
@@ -31,7 +32,7 @@ app.post("/api/shorturl", function (req, res) {
   if (isValidUrl) {
     res.json({
       original_url: req.body.url,
-      short_url: "zde short url",
+      short_url: 123456,
     });
   } else {
     res.json({
@@ -39,6 +40,13 @@ app.post("/api/shorturl", function (req, res) {
     });
   }
 });
+
+// app.get("/api/shorturl/:shorturlid", function (req, res) {
+//   console.log(req.json);
+//   res.json({
+//     NEVIMPICE: "Test",
+//   });
+// });
 
 app.listen(port, function () {
   console.log(`Listening on port ${port}`);
