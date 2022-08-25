@@ -1,7 +1,9 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
-const { response } = require("express");
+
+const dns = require("node:dns");
+
 const app = express();
 
 // Basic Configuration
@@ -21,25 +23,47 @@ app.get("/api/hello", function (req, res) {
 });
 
 //zajistí že můžu využít payload (form data), respektive req.body níže...nevím nerozumím tomu pořádně zatímpičo
-app.use(express.urlencoded());
+app.use(express.urlencoded({ extended: true }));
 
-app.post("/api/shorturl/", function (req, res) {
-  const validUrlRegex =
-    /(ftp|http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?/;
+app.post(
+  "/api/shorturl/",
+  function (req, res, next) {
+    const hostnameRegex = /(^https:\/\/|\/$)/g;
+    const hostname = req.body.url.replace(hostnameRegex, "");
 
-  const isValidUrl = validUrlRegex.test(req.body.url);
+    const validUrlRegex =
+      /(ftp|http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?/;
+    const isValidUrl = validUrlRegex.test(req.body.url);
 
-  if (isValidUrl) {
-    res.json({
-      original_url: req.body.url,
-      short_url: 123456,
+    const shortUrl = Math.floor(Math.random() * 1000);
+
+    dns.lookup(hostname, function (err, adress, family) {
+      if (err) console.log(err.code);
+      console.log(adress, family);
     });
-  } else {
-    res.json({
-      error: "invalid url",
-    });
+
+    let oldSend = res.send;
+    res.send = function (data) {
+      console.log(data);
+      oldSend.apply(res, arguments);
+    };
+
+    if (isValidUrl) {
+      res.json({
+        original_url: req.body.url,
+        short_url: shortUrl,
+      });
+    } else {
+      res.json({
+        error: "invalid url",
+      });
+    }
+    next();
+  },
+  function (req, res) {
+    console.log(req.data);
   }
-});
+);
 
 // app.get("/api/shorturl/:shorturlid", function (req, res) {
 //   console.log(req.json);
