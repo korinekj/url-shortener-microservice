@@ -70,6 +70,7 @@ app
         error: "invalid url",
       });
     }
+    next();
   })
   .get("/api/shorturl/:shorturlid", function (req, res, next) {
     const resSessiontoJSON = JSON.parse(req.session.response);
