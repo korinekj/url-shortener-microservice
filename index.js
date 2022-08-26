@@ -3,6 +3,7 @@ const express = require("express");
 const cors = require("cors");
 
 const dns = require("node:dns");
+const session = require("express-session");
 
 const app = express();
 
@@ -25,9 +26,26 @@ app.get("/api/hello", function (req, res) {
 //zajistí že můžu využít payload (form data), respektive req.body níže...nevím nerozumím tomu pořádně zatímpičo
 app.use(express.urlencoded({ extended: true }));
 
-app.post(
-  "/api/shorturl/",
-  function (req, res, next) {
+// Populates req.session
+app.use(
+  session({
+    resave: false, // don't save session if unmodified
+    saveUninitialized: false, // don't create session until something stored
+    secret: "keyboard cat",
+  })
+);
+
+app
+  .post("/api/shorturl/", function (req, res, next) {
+    req.session.test = req.body;
+
+    let oldSend = res.send;
+    res.send = function (data) {
+      req.session.response = data;
+      console.log(req.session.response);
+      oldSend.apply(res, arguments);
+    };
+
     const hostnameRegex = /(^https:\/\/|\/$)/g;
     const hostname = req.body.url.replace(hostnameRegex, "");
 
@@ -42,12 +60,6 @@ app.post(
       console.log(adress, family);
     });
 
-    let oldSend = res.send;
-    res.send = function (data) {
-      console.log(data);
-      oldSend.apply(res, arguments);
-    };
-
     if (isValidUrl) {
       res.json({
         original_url: req.body.url,
@@ -58,19 +70,19 @@ app.post(
         error: "invalid url",
       });
     }
-    next();
-  },
-  function (req, res) {
-    console.log(req.data);
-  }
-);
+  })
+  .get("/api/shorturl/:shorturlid", function (req, res, next) {
+    const resSessiontoJSON = JSON.parse(req.session.response);
+    console.log(resSessiontoJSON.short_url);
+    console.log(req.params);
+    if (parseInt(req.params.shorturlid) === resSessiontoJSON.short_url) {
+      res.redirect(resSessiontoJSON.original_url);
+    } else {
+      res.send("NEPLATNÝ SHORT URL");
+    }
 
-// app.get("/api/shorturl/:shorturlid", function (req, res) {
-//   console.log(req.json);
-//   res.json({
-//     NEVIMPICE: "Test",
-//   });
-// });
+    next();
+  });
 
 app.listen(port, function () {
   console.log(`Listening on port ${port}`);
