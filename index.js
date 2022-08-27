@@ -18,6 +18,13 @@ mongoose.connect(process.env.MONGO_URI, {
   useUnifiedTopology: true,
 });
 
+// check for proper connection
+const database = mongoose.connection;
+database.on("error", console.error.bind(console, "connection error: "));
+database.once("open", () => {
+  console.log("mongo database connected");
+});
+
 let urlSchema = new mongoose.Schema({
   originalUrl: String,
   shortUrl: String,
@@ -43,24 +50,26 @@ app.post("/api/shorturl/", function (req, res) {
       if (error) {
         console.log(error);
       } else {
-        console.log(data);
+        console.log("URL SAVED TO DATABASE");
       }
     });
   };
 
-  const hostnameRegex = /(^https:\/\/|\/$)/g;
-  const hostname = req.body.url.replace(hostnameRegex, "");
+  // const hostnameRegex = /(^https:\/\/|\/$)/g;
+  // const hostname = req.body.url.replace(hostnameRegex, "");
+  // console.log("hostname: ", hostname);
 
   const validUrlRegex =
     /(http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?/;
   const isValidUrl = validUrlRegex.test(req.body.url);
+  console.log("isValidUrl: ", isValidUrl);
 
   const shortUrl = Math.floor(Math.random() * 1000);
 
-  dns.lookup(hostname, function (err, adress, family) {
-    if (err) console.log(err.code);
-    console.log(adress, family);
-  });
+  // dns.lookup(hostname, function (err, adress, family) {
+  //   if (err) console.log(err.code);
+  //   console.log(adress, family);
+  // });
 
   if (isValidUrl) {
     saveUrlToDatabase();
@@ -89,7 +98,8 @@ app.get("/api/shorturl/:shorturlid", function (req, res) {
         if (doc.length == 0) {
           res.send("CHYBNÁ SHORT URL");
         } else {
-          res.json(doc);
+          console.log(doc);
+          res.redirect(doc[0].originalUrl);
         }
       }
     }
