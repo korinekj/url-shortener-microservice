@@ -2,7 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
-const dns = require("node:dns");
+//const dns = require("node:dns");
 const app = express();
 
 // Basic Configuration
@@ -45,6 +45,13 @@ app.get("/", function (req, res) {
 });
 
 app.post("/api/shorturl/", function (req, res) {
+  const validUrlRegex =
+    /(http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?/;
+  const isValidUrl = validUrlRegex.test(req.body.url);
+  console.log("isValidUrl: ", isValidUrl);
+
+  const shortUrl = Math.floor(Math.random() * 1000);
+
   const saveUrlToDatabase = () => {
     let url = new Url({
       originalUrl: req.body.url,
@@ -55,26 +62,10 @@ app.post("/api/shorturl/", function (req, res) {
       if (error) {
         console.log(error);
       } else {
-        console.log("URL SAVED TO DATABASE");
+        console.log(data, "DATA (url object) SAVED TO DATABASE");
       }
     });
   };
-
-  // const hostnameRegex = /(^https:\/\/|\/$)/g;
-  // const hostname = req.body.url.replace(hostnameRegex, "");
-  // console.log("hostname: ", hostname);
-
-  const validUrlRegex =
-    /(http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?/;
-  const isValidUrl = validUrlRegex.test(req.body.url);
-  console.log("isValidUrl: ", isValidUrl);
-
-  const shortUrl = Math.floor(Math.random() * 1000);
-
-  // dns.lookup(hostname, function (err, adress, family) {
-  //   if (err) console.log(err.code);
-  //   console.log(adress, family);
-  // });
 
   if (isValidUrl) {
     saveUrlToDatabase();
@@ -88,6 +79,17 @@ app.post("/api/shorturl/", function (req, res) {
       error: "invalid url",
     });
   }
+
+  //ŘEŠENÍ S DNS.LOOKUP MI NEFUNGOVALY TESTY, TAK JSEM SE NA TO VYSRAL A VRÁTIL SE ZPĚT NA SVŮJ KOD S REGEXAMA
+  //chápu jak dns.lookup v principu funguje takže nemá smysl více řešit momentálně
+  // const hostnameRegex = /(^https:\/\/|\/$)/g;
+  // const hostname = req.body.url.replace(hostnameRegex, "");
+  // console.log("hostname: ", hostname);
+
+  // dns.lookup(hostname, function (err, adress, family) {
+  //   if (err) console.log(err.code);
+  //   console.log(adress, family);
+  // });
 });
 
 app.get("/api/shorturl/:shorturlid", function (req, res) {
