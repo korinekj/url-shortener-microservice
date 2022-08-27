@@ -8,9 +8,7 @@ const app = express();
 // Basic Configuration
 const port = process.env.PORT || 3000;
 
-//zajistí že můžu využít payload (form data), respektive req.body níže...nevím nerozumím tomu pořádně zatímpičo
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
+/**------------- <DATABASE> ----------------*/
 
 //connect to database
 mongoose.connect(process.env.MONGO_URI, {
@@ -25,11 +23,18 @@ database.once("open", () => {
   console.log("mongo database connected");
 });
 
+// define Schema and Model
 let urlSchema = new mongoose.Schema({
   originalUrl: String,
   shortUrl: String,
 });
 let Url = mongoose.model("Url", urlSchema);
+
+/**------------- </DATABASE> ----------------*/
+
+//zajistí že můžu využít payload (form data), respektive req.body níže...nevím nerozumím tomu pořádně zatímpičo
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
 app.use(cors());
 
